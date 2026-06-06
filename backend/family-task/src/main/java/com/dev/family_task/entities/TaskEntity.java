@@ -1,12 +1,12 @@
 package com.dev.family_task.entities;
 
+import com.dev.family_task.constant.TaskStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tasks")
@@ -34,12 +34,17 @@ public class TaskEntity {
 
     private int points;
 
-    private String status = "TODO"; // TODO, PENDING_REVIEW, COMPLETED
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TaskStatus status = TaskStatus.PENDING;
 
     @Column(name = "image_proof_url")
     private String imageProofUrl;
 
     @Column(name = "due_date")
-    @Temporal(TemporalType.DATE) // บังคับให้เป็นแค่ วัน/เดือน/ปี เท่านั้น ไม่เอาเวลา
     private LocalDate dueDate;
+
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private java.time.ZonedDateTime createdAt;
 }

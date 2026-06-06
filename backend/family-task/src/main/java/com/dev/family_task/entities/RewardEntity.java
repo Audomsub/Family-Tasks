@@ -1,32 +1,28 @@
 package com.dev.family_task.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "rewards")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 public class RewardEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "family_id")
-    private FamilyEntity family;
+    @Column(nullable = false)
+    private String name; // ชื่อรางวัล เช่น "ไปกินชาบู", "เล่นเกมเพิ่ม 2 ชม."
+
+    private String description;
 
     @Column(nullable = false)
-    private String title;
+    private Integer pointsRequired; // แต้มที่ต้องใช้แลก
 
-    @Column(name = "point_cost", nullable = false)
-    private int pointCost;
-
-    private int stock = -1; // -1 คือไม่จำกัด
-
-    @Column(name = "image_url")
-    private String imageUrl;
+    @ManyToOne
+    @JoinColumn(name = "family_id", nullable = false)
+    private FamilyEntity family; // รางวัลนี้เป็นของบ้านไหน
 }

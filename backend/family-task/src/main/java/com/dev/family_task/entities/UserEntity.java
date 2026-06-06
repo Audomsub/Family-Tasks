@@ -28,6 +28,7 @@ public class UserEntity {
     private String email;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -35,11 +36,15 @@ public class UserEntity {
     private RoleEntity role;
 
     @Column(name = "total_points")
-    private int totalPoints = 0;
+    private Integer totalPoints = 0;
 
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @Column(name = "is_banned")
+    private boolean isBanned = false;
+
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
 }

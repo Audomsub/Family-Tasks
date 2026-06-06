@@ -12,7 +12,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.sql.rowset.serial.SerialException;
 import java.io.IOException;
 
 @Component
@@ -20,6 +19,7 @@ import java.io.IOException;
 public class JwtFillter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final com.dev.family_task.repositories.UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -44,15 +44,27 @@ public class JwtFillter extends OncePerRequestFilter {
             // 3. ถ้าแกะสำเร็จ และยังไม่มีการยืนยันตัวตนใน Session นี้
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                // สร้างบัตรผ่านจำลองเก็บไว้ในระบบของ Spring Security
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userEmail,
-                        null,
-                        java.util.Collections.emptyList() // ในอนาคตจะใส่ Role เช่น PARENT/CHILD ตรงนี้
-                );
+                // Load User to get the Role
+                com.dev.family_task.entities.UserEntity user = userRepository.findByEmail(userEmail).orElse(null);
+                if (user != null) {
+                    // Check if banned
+                    if (user.isBanned()) {
+                        throw new RuntimeException("Account is banned");
+                    }
+                    java.util.List<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities =
+                        java.util.Collections.singletonList(
+                            new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+                        );
+
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userEmail,
+                            null,
+                            authorities
+                    );
 
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
         } catch (Exception e) {
             // ถ้า Token ปลอมหรือหมดอายุ จะไม่ทำอะไร (จะติด 403 อัตโนมัติในเส้นที่ล็อคไว้)

@@ -26,6 +26,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // เปิดให้ Register/Login
+                        // --- เปิดหน้า Swagger ให้เข้าถึงได้โดยไม่ต้อง Login ---
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN") // ต้องเป็น SUPER_ADMIN เท่านั้น
                         .anyRequest().authenticated() // ที่เหลือต้องมี Token
                 )
                 // แก้ไขบรรทัดนี้: วาง jwtFilter ไว้ก่อนหน้า UsernamePasswordAuthenticationFilter มาตรฐาน

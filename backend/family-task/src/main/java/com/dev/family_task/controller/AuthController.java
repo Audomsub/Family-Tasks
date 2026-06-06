@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -62,5 +62,13 @@ public class AuthController {
             error.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/me")
+    public ResponseEntity<com.dev.family_task.entities.UserEntity> getCurrentUser() {
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        com.dev.family_task.entities.UserEntity user = authService.getUserByEmail(email);
+        return ResponseEntity.ok(user);
     }
 }

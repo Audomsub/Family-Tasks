@@ -24,10 +24,12 @@ public class FamilyEntity {
     @Column(name = "invite_code", unique = true, nullable = false)
     private String inviteCode;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
 
     // เชื่อมไปยังสมาชิกในบ้าน
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<UserEntity> members;
 }

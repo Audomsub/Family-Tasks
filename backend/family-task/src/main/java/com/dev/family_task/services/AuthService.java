@@ -1,6 +1,5 @@
 package com.dev.family_task.services;
 
-import com.dev.family_task.config.SecurityConfig;
 import com.dev.family_task.dto.Request.LoginRequest;
 import com.dev.family_task.dto.Request.RegisterRequest;
 import com.dev.family_task.entities.FamilyEntity;
@@ -29,7 +28,7 @@ public class AuthService {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("email already exists!");
         }
-        
+
         FamilyEntity familyEntity = new FamilyEntity();
         familyEntity.setFamilyName(request.getFamilyName());
         familyEntity.setInviteCode(UUID.randomUUID().toString().substring(0 , 8).toUpperCase());
@@ -64,14 +63,15 @@ public class AuthService {
         UserEntity userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-//        if (userEntity.getFamily() != null) {
-//            throw new RuntimeException("You are already of another family");
-//        }
-
         userEntity.setFamily(familyEntity);
         userEntity.setRole(RoleEntity.CHILD);
         userRepository.save(userEntity);
 
         return "Welcome to family : " + familyEntity.getFamilyName();
+    }
+
+    public UserEntity getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }
