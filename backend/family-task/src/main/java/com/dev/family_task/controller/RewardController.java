@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,47 +17,53 @@ public class RewardController {
 
     private final RewardService rewardService;
 
+    private String getCurrentEmail() {
+        return org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+    }
+
     @PostMapping
     public ResponseEntity<Map<String, String>> createReward(@RequestBody RewardRequest request) {
-        // แกะ Email อัตโนมัติจาก Token
-        String email = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getName();
-
         try {
-            String message = rewardService.createReward(email, request);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", message);
-            return ResponseEntity.ok(response);
+            String message = rewardService.createReward(getCurrentEmail(), request);
+            return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-
-
     @GetMapping
     public ResponseEntity<List<RewardResponse>> getRewards() {
-        String email = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getName();
-        return ResponseEntity.ok(rewardService.getFamilyRewards(email));
+        return ResponseEntity.ok(rewardService.getFamilyRewards(getCurrentEmail()));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, String>> updateReward(@PathVariable Long id, @RequestBody RewardRequest request) {
+        try {
+            String message = rewardService.updateReward(id, getCurrentEmail(), request);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteReward(@PathVariable Long id) {
+        try {
+            String message = rewardService.deleteReward(id, getCurrentEmail());
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/{id}/redeem")
     public ResponseEntity<Map<String, String>> redeemReward(@PathVariable Long id) {
-        String email = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getName();
-
         try {
-            String message = rewardService.redeemReward(id, email);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", message);
-            return ResponseEntity.ok(response);
+            String message = rewardService.redeemReward(id, getCurrentEmail());
+            return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+});
+
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['http://192.168.56.1:3000', '192.168.56.1'],
   async rewrites() {
     return [
       {
@@ -11,4 +20,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

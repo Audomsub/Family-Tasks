@@ -14,6 +14,8 @@ public class FamilyResponse {
 
     private String inviteCode;
 
+    private Integer allowanceRate;
+
     private List<MemberDto> member;
 
     @Data

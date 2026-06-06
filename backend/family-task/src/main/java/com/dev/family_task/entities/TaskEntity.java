@@ -44,6 +44,12 @@ public class TaskEntity {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    @Column(name = "parent_comment", columnDefinition = "TEXT")
+    private String parentComment;
+
+    @Column(name = "recurrence_pattern")
+    private String recurrencePattern; // "DAILY", "WEEKLY", "MONTHLY", or null
+
     @org.hibernate.annotations.CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private java.time.ZonedDateTime createdAt;

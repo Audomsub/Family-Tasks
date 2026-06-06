@@ -10,4 +10,6 @@ public class TaskRequest {
     private Integer points;
     private LocalDate dueDate;
     private Long assignee_Id; // ID ของลูกที่จะมอบหมาย (ถ้าไม่ส่งมาจะเป็นงานกลาง)
+    private String recurrencePattern;
+    private String parentComment;
 }

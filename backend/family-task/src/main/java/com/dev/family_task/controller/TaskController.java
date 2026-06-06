@@ -17,67 +17,74 @@ import java.util.Map;
 public class TaskController {
     private final TaskService taskService;
 
-    @PostMapping()
-    public ResponseEntity<Map<String , String>> createTask(@RequestBody TaskRequest request) {
-        String email = org.springframework.security.core.context.SecurityContextHolder
+    private String getCurrentEmail() {
+        return org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication().getName();
+    }
+
+    @PostMapping()
+    public ResponseEntity<Map<String, String>> createTask(@RequestBody TaskRequest request) {
         try {
-            String message = taskService.createTask(email , request);
-            Map<String , String> response = new HashMap<>();
-            response.put("message" , message);
-            return ResponseEntity.ok(response);
+            String message = taskService.createTask(getCurrentEmail(), request);
+            return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
-            Map<String , String> error = new HashMap<>();
-            error.put("error" , e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // เพิ่มตัวนี้เข้าไปต่อจาก Method POST ครับ
     @GetMapping
     public ResponseEntity<List<TaskResponse>> getTasks() {
-        // แกะ Email จาก Token อัตโนมัติ (ขอบคุณ Filter ที่เราทำไว้!)
-        String email = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getName();
-
-        return ResponseEntity.ok(taskService.getFamilyTasks(email));
+        return ResponseEntity.ok(taskService.getFamilyTasks(getCurrentEmail()));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, String>> updateTask(@PathVariable Long id, @RequestBody TaskRequest request) {
+        try {
+            String message = taskService.updateTask(id, getCurrentEmail(), request);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteTask(@PathVariable Long id) {
+        try {
+            String message = taskService.deleteTask(id, getCurrentEmail());
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 
     @PatchMapping("/{id}/submit")
     public ResponseEntity<Map<String, String>> submitTask(@PathVariable Long id) {
-        // ดึง Email คนที่กำลังล็อกอินจาก Token
-        String email = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getName();
-
         try {
-            String message = taskService.submitTask(id, email);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", message);
-            return ResponseEntity.ok(response);
+            String message = taskService.submitTask(id, getCurrentEmail());
+            return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage()); // ตรงนี้จะพ่น Error ภาษาอังกฤษที่เราตั้งไว้ออกไป
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-
-
     @PatchMapping("/{id}/approve")
     public ResponseEntity<Map<String, String>> approveTask(@PathVariable Long id) {
-        String email = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getName();
-
         try {
-            String message = taskService.approveTask(id, email);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", message);
-            return ResponseEntity.ok(response);
+            String message = taskService.approveTask(id, getCurrentEmail());
+            return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<Map<String, String>> rejectTask(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        try {
+            String comment = body.getOrDefault("comment", "");
+            String message = taskService.rejectTask(id, getCurrentEmail(), comment);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

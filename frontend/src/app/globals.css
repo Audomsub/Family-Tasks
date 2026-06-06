@@ -310,7 +310,7 @@ img, svg { display: block; max-width: 100%; }
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  z-index: 100;
+  z-index: 250;
 }
 .dropdown-header {
   display: flex;

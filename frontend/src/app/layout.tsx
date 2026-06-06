@@ -14,6 +14,16 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "FamilyTask — Family Task & Reward Platform",
   description: "Manage family tasks and rewards together, in a fun and kawaii way!",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Family Tasks",
+  },
+};
+
+export const viewport = {
+  themeColor: "#E97B94",
 };
 
 export default function RootLayout({

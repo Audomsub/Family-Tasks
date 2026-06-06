@@ -1,57 +1,76 @@
 "use client";
 
 import { api } from '@/lib/api';
+import toast from 'react-hot-toast';
+import { Trash2 } from 'lucide-react';
+import { GroceryItem as GroceryType } from '@/types';
 
-export default function GroceryItem({ item, onUpdate }: { item: any, onUpdate: () => void }) {
+export default function GroceryItem({
+  item,
+  onUpdate,
+}: {
+  item: GroceryType;
+  onUpdate: () => void;
+}) {
   const togglePurchased = async () => {
-    await api.patch(`/groceries/${item.id}`);
-    onUpdate();
+    try {
+      // Correct endpoint: PATCH /api/groceries/{id}/toggle
+      await api.patch(`/groceries/${item.id}/toggle`);
+      onUpdate();
+    } catch {
+      toast.error('Failed to update item.');
+    }
   };
 
   return (
-    <div onClick={togglePurchased} style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '1.5rem', 
-      padding: '1.5rem',
-      cursor: 'pointer',
-      backgroundColor: item.isPurchased ? 'var(--pink-light)' : 'var(--base-white)',
-      opacity: item.isPurchased ? 0.7 : 1,
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      transform: item.isPurchased ? 'scale(0.98)' : 'scale(1)',
-      borderLeft: item.isPurchased ? '6px solid var(--baby-pink)' : '6px solid var(--sky-blue)',
-      borderRadius: '20px',
-      boxShadow: '0 2px 8px rgba(139,94,52,0.06)',
-      border: `2px solid ${item.isPurchased ? 'var(--baby-pink)' : 'transparent'}`,
-    }}>
-      
+    <div
+      className="flex items-center gap-4 p-4 rounded-[20px] border-2 transition-all duration-300 group"
+      style={{
+        background: item.isPurchased ? 'var(--mint-green)' : 'var(--base-white)',
+        borderColor: item.isPurchased ? 'var(--base-white)' : 'var(--bg-cream)',
+        opacity: item.isPurchased ? 0.8 : 1,
+        transform: item.isPurchased ? 'scale(0.99)' : 'scale(1)',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
       {/* Custom Checkbox */}
-      <div style={{ 
-        width: '32px', 
-        height: '32px', 
-        borderRadius: '50%', 
-        border: item.isPurchased ? 'none' : '3px solid var(--sky-blue)',
-        backgroundColor: item.isPurchased ? 'var(--baby-pink)' : 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.2s ease',
-        flexShrink: 0
-      }}>
-        {item.isPurchased && <span style={{ color: 'var(--dark-brown)', fontSize: '1.2rem', fontWeight: 900 }}>✓</span>}
-      </div>
+      <button
+        onClick={togglePurchased}
+        className="flex-shrink-0 w-8 h-8 rounded-full border-3 transition-all duration-200 flex items-center justify-center"
+        style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          border: item.isPurchased ? 'none' : '3px solid var(--sky-blue)',
+          background: item.isPurchased ? '#2B7A2B' : 'transparent',
+          transition: 'all 0.2s ease',
+          flexShrink: 0,
+        }}
+        aria-label={item.isPurchased ? 'Mark as not purchased' : 'Mark as purchased'}
+      >
+        {item.isPurchased && (
+          <span style={{ color: 'white', fontSize: '1rem', fontWeight: 900 }}>✓</span>
+        )}
+      </button>
 
-      <span style={{ 
-        flex: 1,
-        fontSize: '1.25rem',
-        fontWeight: 700,
-        color: item.isPurchased ? 'var(--text-muted)' : 'var(--dark-brown)',
-        textDecoration: item.isPurchased ? 'line-through' : 'none',
-        transition: 'all 0.3s ease'
-      }}>
+      {/* Item name */}
+      <span
+        className="flex-1 font-bold text-base transition-all duration-300"
+        style={{
+          color: item.isPurchased ? '#2B7A2B' : 'var(--dark-brown)',
+          textDecoration: item.isPurchased ? 'line-through' : 'none',
+        }}
+      >
         {item.name}
       </span>
-      
+
+      {/* Status badge */}
+      {item.isPurchased && (
+        <span className="text-xs font-black px-2.5 py-1 rounded-full border-2 border-white"
+          style={{ background: 'var(--base-white)', color: '#2B7A2B' }}>
+          ✓ Got it!
+        </span>
+      )}
     </div>
   );
 }

@@ -22,7 +22,7 @@ public class TaskService {
     private final UserRepository userRepository;
 
     @Transactional
-    public String createTask(String email , TaskRequest request) {
+    public String createTask(String email, TaskRequest request) {
         UserEntity creator = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("user not found"));
         if (!creator.getRole().name().equals("PARENT")) {
@@ -35,6 +35,7 @@ public class TaskService {
         task.setDueDate(request.getDueDate());
         task.setStatus(TaskStatus.PENDING);
         task.setFamily(creator.getFamily());
+        task.setRecurrencePattern(request.getRecurrencePattern());
 
         if (request.getAssignee_Id() != null) {
             UserEntity assignee = userRepository.findById(request.getAssignee_Id())
@@ -42,24 +43,19 @@ public class TaskService {
             task.setAssignedTo(assignee);
         }
         taskRepository.save(task);
-        return "create home succeses";
+        return "Task created successfully!";
     }
 
-
-    // เพิ่ม Method นี้ต่อจาก createTask เลยครับ
     public List<TaskResponse> getFamilyTasks(String email) {
-        // 1. หาว่าคนที่ Login คือใคร และอยู่บ้านไหน
         UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("ไม่พบข้อมูลผู้ใช้งาน"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (user.getFamily() == null) {
-            throw new RuntimeException("คุณยังไม่ได้เข้าร่วมครอบครัวใดๆ");
+            throw new RuntimeException("You are not in any family");
         }
 
-        // 2. ดึงงานทั้งหมดของบ้านนี้ (ใช้ Method ที่เราเขียนไว้ใน TaskRepository)
         List<TaskEntity> tasks = taskRepository.findByFamilyId(user.getFamily().getId());
 
-        // 3. แปลง Entity เป็น DTO เพื่อส่งกลับ
         return tasks.stream().map(task -> TaskResponse.builder()
                 .id(task.getId())
                 .title(task.getTitle())
@@ -67,87 +63,195 @@ public class TaskService {
                 .points(task.getPoints())
                 .dueDate(task.getDueDate())
                 .status(task.getStatus().name())
-                // เช็คว่ามีคนรับผิดชอบหรือยัง ถ้าไม่มีให้ขึ้นว่า "งานกองกลาง"
-                .assigneeName(task.getAssignedTo() != null ? task.getAssignedTo().getFullName() : "งานกองกลาง")
+                .assigneeName(task.getAssignedTo() != null ? task.getAssignedTo().getFullName() : null)
+                .recurrencePattern(task.getRecurrencePattern())
+                .parentComment(task.getParentComment())
                 .build()
         ).toList();
     }
 
-
-
     @Transactional
-    public String submitTask(Long taskId, String email) {
-        // 1. หาข้อมูลลูกที่กดส่งงาน
-        UserEntity user = userRepository.findByEmail(email)
+    public String updateTask(Long taskId, String email, TaskRequest request) {
+        UserEntity parent = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. หางานเป้าหมาย
+        if (!parent.getRole().name().equals("PARENT")) {
+            throw new RuntimeException("Only parents can edit tasks");
+        }
+
         TaskEntity task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        // 3. ตรวจสอบว่าเป็นงานในบ้านเดียวกันหรือไม่
+        if (!task.getFamily().getId().equals(parent.getFamily().getId())) {
+            throw new RuntimeException("You do not have permission to edit this task");
+        }
+
+        if (request.getTitle() != null) task.setTitle(request.getTitle());
+        if (request.getDescription() != null) task.setDescription(request.getDescription());
+        if (request.getPoints() != null) task.setPoints(request.getPoints());
+        if (request.getDueDate() != null) task.setDueDate(request.getDueDate());
+        if (request.getRecurrencePattern() != null) task.setRecurrencePattern(request.getRecurrencePattern());
+
+        if (request.getAssignee_Id() != null) {
+            UserEntity assignee = userRepository.findById(request.getAssignee_Id())
+                    .orElseThrow(() -> new RuntimeException("Assignee not found"));
+            task.setAssignedTo(assignee);
+        }
+
+        taskRepository.save(task);
+        return "Task updated successfully!";
+    }
+
+    @Transactional
+    public String deleteTask(Long taskId, String email) {
+        UserEntity parent = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!parent.getRole().name().equals("PARENT")) {
+            throw new RuntimeException("Only parents can delete tasks");
+        }
+
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getFamily().getId().equals(parent.getFamily().getId())) {
+            throw new RuntimeException("You do not have permission to delete this task");
+        }
+
+        taskRepository.delete(task);
+        return "Task deleted successfully!";
+    }
+
+    @Transactional
+    public String submitTask(Long taskId, String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
         if (!task.getFamily().getId().equals(user.getFamily().getId())) {
             throw new RuntimeException("You do not have permission to access tasks of another family");
         }
 
-        // 4. ตรวจสอบว่าเป็นงานของคนนี้จริงๆ หรือไม่ (ถ้ามีการระบุ Assignee ไว้)
         if (task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(user.getId())) {
             throw new RuntimeException("You cannot submit a task assigned to someone else");
         }
 
-        // 5. ตรวจสอบสถานะว่าส่งได้ไหม (ต้องเป็น PENDING)
-        if (task.getStatus() != TaskStatus.PENDING) {
+        if (task.getStatus() != TaskStatus.PENDING && task.getStatus() != TaskStatus.REJECTED) {
             throw new RuntimeException("Cannot submit this task. Current status: " + task.getStatus());
         }
 
-        // 6. เปลี่ยนสถานะเป็น SUBMITTED (รอพ่อแม่ตรวจ)
         task.setStatus(TaskStatus.SUBMITTED);
         taskRepository.save(task);
 
         return "Task submitted successfully! Waiting for parent's approval.";
     }
 
-
     @Transactional
-    public String approveTask(Long taskId, String email) {
-        // 1. หาข้อมูลผู้ใช้งาน (คาดหวังว่าเป็นพ่อแม่)
+    public String rejectTask(Long taskId, String email, String comment) {
         UserEntity parent = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. ตรวจสอบสิทธิ์ว่าต้องเป็น PARENT เท่านั้น
         if (!parent.getRole().name().equals("PARENT")) {
-            throw new RuntimeException("Only parents can approve tasks");
+            throw new RuntimeException("Only parents can reject tasks");
         }
 
-        // 3. หางานเป้าหมาย
         TaskEntity task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        // 4. ตรวจสอบว่าเป็นงานของบ้านตัวเองหรือไม่
         if (!task.getFamily().getId().equals(parent.getFamily().getId())) {
             throw new RuntimeException("You do not have permission to access tasks of another family");
         }
 
-        // 5. สถานะต้องเป็น SUBMITTED (ส่งงานแล้ว) ถึงจะอนุมัติได้
+        if (task.getStatus() != TaskStatus.SUBMITTED) {
+            throw new RuntimeException("Task is not ready for review. Current status: " + task.getStatus());
+        }
+
+        task.setStatus(TaskStatus.REJECTED);
+        task.setParentComment(comment);
+        taskRepository.save(task);
+
+        return "Task rejected successfully.";
+    }
+
+    @Transactional
+    public String approveTask(Long taskId, String email) {
+        UserEntity parent = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!parent.getRole().name().equals("PARENT")) {
+            throw new RuntimeException("Only parents can approve tasks");
+        }
+
+        TaskEntity task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getFamily().getId().equals(parent.getFamily().getId())) {
+            throw new RuntimeException("You do not have permission to access tasks of another family");
+        }
+
         if (task.getStatus() != TaskStatus.SUBMITTED) {
             throw new RuntimeException("Task is not ready for approval. Current status: " + task.getStatus());
         }
 
-        // 6. เปลี่ยนสถานะเป็น APPROVED
         task.setStatus(TaskStatus.APPROVED);
 
-        // 7. โอนแต้มให้ลูก (Assignee)
         if (task.getAssignedTo() != null) {
             UserEntity child = task.getAssignedTo();
-            // ป้องกันกรณีแต้มเดิมเป็น null ให้มองเป็น 0
-            int currentPoints = child.getTotalPoints() == null ? 0 : child.getTotalPoints();
-            child.setTotalPoints(currentPoints + task.getPoints());
+            
+            // Streak logic
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.time.LocalDate lastDate = child.getLastTaskDate();
+            if (lastDate != null) {
+                if (lastDate.equals(today)) {
+                    // Already did a task today, streak unchanged
+                } else if (lastDate.equals(today.minusDays(1))) {
+                    // Did a task yesterday, increment streak
+                    child.setCurrentStreak((child.getCurrentStreak() == null ? 0 : child.getCurrentStreak()) + 1);
+                } else {
+                    // Missed a day or more, reset streak
+                    child.setCurrentStreak(1);
+                }
+            } else {
+                child.setCurrentStreak(1); // First task ever
+            }
+            child.setLastTaskDate(today);
 
-            userRepository.save(child); // บันทึกแต้มใหม่ของลูก
+            // Points & Level logic
+            int currentPoints = child.getTotalPoints() == null ? 0 : child.getTotalPoints();
+            currentPoints += task.getPoints();
+            child.setTotalPoints(currentPoints);
+            child.setLevel(currentPoints / 100 + 1);
+
+            userRepository.save(child);
         }
 
-        taskRepository.save(task); // บันทึกสถานะงานใหม่
+        taskRepository.save(task);
 
-        return "Task approved successfully! Points have been awarded to the assignee.";
+        // Recurring logic
+        if (task.getRecurrencePattern() != null && !task.getRecurrencePattern().isEmpty() && !task.getRecurrencePattern().equals("NONE")) {
+            TaskEntity newTask = new TaskEntity();
+            newTask.setTitle(task.getTitle());
+            newTask.setDescription(task.getDescription());
+            newTask.setPoints(task.getPoints());
+            newTask.setStatus(TaskStatus.PENDING);
+            newTask.setFamily(task.getFamily());
+            newTask.setAssignedTo(task.getAssignedTo());
+            newTask.setRecurrencePattern(task.getRecurrencePattern());
+            
+            if (task.getDueDate() != null) {
+                if (task.getRecurrencePattern().equals("DAILY")) {
+                    newTask.setDueDate(task.getDueDate().plusDays(1));
+                } else if (task.getRecurrencePattern().equals("WEEKLY")) {
+                    newTask.setDueDate(task.getDueDate().plusWeeks(1));
+                } else if (task.getRecurrencePattern().equals("MONTHLY")) {
+                    newTask.setDueDate(task.getDueDate().plusMonths(1));
+                }
+            }
+            taskRepository.save(newTask);
+        }
+
+        return "Task approved successfully! Points and streaks have been awarded.";
     }
 }

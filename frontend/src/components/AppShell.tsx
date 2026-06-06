@@ -1,7 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 /**
  * AppShell decides which wrapper to apply:
@@ -12,6 +14,14 @@ import Navbar from "@/components/Navbar";
  */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user && user.role === 'PARENT' && !user.family && pathname !== '/family') {
+      router.push('/family');
+    }
+  }, [user, loading, pathname, router]);
 
   const isAdmin = pathname?.startsWith("/admin");
   const isAuth  = pathname === "/login" || pathname === "/forgot-password";

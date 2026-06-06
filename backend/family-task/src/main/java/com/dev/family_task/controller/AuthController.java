@@ -71,4 +71,30 @@ public class AuthController {
         com.dev.family_task.entities.UserEntity user = authService.getUserByEmail(email);
         return ResponseEntity.ok(user);
     }
+
+    @org.springframework.web.bind.annotation.PatchMapping("/avatar")
+    public ResponseEntity<Map<String, String>> updateAvatar(@RequestBody Map<String, String> body) {
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        try {
+            String avatarUrl = body.getOrDefault("avatarUrl", "");
+            String message = authService.updateAvatar(email, avatarUrl);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/users/{childId}/penalty")
+    public ResponseEntity<Map<String, String>> deductPoints(@org.springframework.web.bind.annotation.PathVariable Long childId, @RequestBody Map<String, Object> body) {
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        try {
+            int points = (int) body.getOrDefault("points", 0);
+            String message = authService.deductPoints(childId, email, points);
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

@@ -44,6 +44,15 @@ public class UserEntity {
     @Column(name = "is_banned")
     private boolean isBanned = false;
 
+    @Column(name = "current_streak")
+    private Integer currentStreak = 0;
+
+    @Column(name = "last_task_date")
+    private java.time.LocalDate lastTaskDate;
+
+    @Column(name = "level")
+    private Integer level = 1;
+
     @org.hibernate.annotations.CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;

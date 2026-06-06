@@ -20,16 +20,13 @@ public class RewardService {
     private final UserRepository userRepository;
 
     public String createReward(String email, RewardRequest request) {
-        // 1. หาข้อมูลพ่อแม่ที่กำลังจะสร้างรางวัล
         UserEntity parent = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. ตรวจสอบสิทธิ์ (ต้องเป็น PARENT เท่านั้น)
         if (!parent.getRole().name().equals("PARENT")) {
             throw new RuntimeException("Only parents can create rewards");
         }
 
-        // 3. สร้างของรางวัลใหม่ผูกกับบ้านนี้
         RewardEntity reward = new RewardEntity();
         reward.setName(request.getName());
         reward.setDescription(request.getDescription());
@@ -37,13 +34,9 @@ public class RewardService {
         reward.setFamily(parent.getFamily());
 
         rewardRepository.save(reward);
-
         return "Reward created successfully!";
     }
 
-
-
-    // --- 1. Method สำหรับดึงรายการของรางวัลทั้งหมดในบ้าน ---
     public List<RewardResponse> getFamilyRewards(String email) {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -63,39 +56,73 @@ public class RewardService {
         ).toList();
     }
 
-    // --- 2. Method สำหรับลูกกดแลกของรางวัล ---
+    @Transactional
+    public String updateReward(Long rewardId, String email, RewardRequest request) {
+        UserEntity parent = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!parent.getRole().name().equals("PARENT")) {
+            throw new RuntimeException("Only parents can edit rewards");
+        }
+
+        RewardEntity reward = rewardRepository.findById(rewardId)
+                .orElseThrow(() -> new RuntimeException("Reward not found"));
+
+        if (!reward.getFamily().getId().equals(parent.getFamily().getId())) {
+            throw new RuntimeException("You do not have permission to edit this reward");
+        }
+
+        if (request.getName() != null) reward.setName(request.getName());
+        if (request.getDescription() != null) reward.setDescription(request.getDescription());
+        if (request.getPointsRequired() != null) reward.setPointsRequired(request.getPointsRequired());
+
+        rewardRepository.save(reward);
+        return "Reward updated successfully!";
+    }
+
+    @Transactional
+    public String deleteReward(Long rewardId, String email) {
+        UserEntity parent = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!parent.getRole().name().equals("PARENT")) {
+            throw new RuntimeException("Only parents can delete rewards");
+        }
+
+        RewardEntity reward = rewardRepository.findById(rewardId)
+                .orElseThrow(() -> new RuntimeException("Reward not found"));
+
+        if (!reward.getFamily().getId().equals(parent.getFamily().getId())) {
+            throw new RuntimeException("You do not have permission to delete this reward");
+        }
+
+        rewardRepository.delete(reward);
+        return "Reward deleted successfully!";
+    }
+
     @Transactional
     public String redeemReward(Long rewardId, String email) {
-        // 1. หาข้อมูลลูกที่กดแลก
         UserEntity child = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 2. เช็คว่าเป็นลูกจริงๆ ใช่ไหม (พ่อแม่ห้ามแย่งแลก!)
         if (!child.getRole().name().equals("CHILD")) {
             throw new RuntimeException("Only children can redeem rewards");
         }
 
-        // 3. หาของรางวัลเป้าหมาย
         RewardEntity reward = rewardRepository.findById(rewardId)
                 .orElseThrow(() -> new RuntimeException("Reward not found"));
 
-        // 4. เช็คว่าเป็นของรางวัลในบ้านตัวเองไหม
         if (!reward.getFamily().getId().equals(child.getFamily().getId())) {
             throw new RuntimeException("You cannot redeem a reward from another family");
         }
 
-        // 5. เช็คแต้มว่าพอไหม
         int currentPoints = child.getTotalPoints() == null ? 0 : child.getTotalPoints();
         if (currentPoints < reward.getPointsRequired()) {
             throw new RuntimeException("Not enough points to redeem this reward");
         }
 
-        // 6. หักแต้ม!
         child.setTotalPoints(currentPoints - reward.getPointsRequired());
         userRepository.save(child);
-
-        // หมายเหตุ: ในระบบที่ใหญ่กว่านี้ เราอาจจะสร้างตาราง RedemptionHistory
-        // เพื่อเก็บประวัติว่าใครแลกอะไรไปบ้าง แต่นี่เราเอาแบบหักแต้มจบในตัวก่อนครับ
 
         return "Reward redeemed successfully! Remaining points: " + child.getTotalPoints();
     }

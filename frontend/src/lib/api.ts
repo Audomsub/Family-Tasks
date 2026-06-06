@@ -61,6 +61,21 @@ export const api = {
       return text;
     }
   },
+  put: async (endpoint: string, data: any) => {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`API PUT ${endpoint} failed`);
+    const text = await res.text();
+    if (!text) return true;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  },
   del: async (endpoint: string) => {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       method: 'DELETE',

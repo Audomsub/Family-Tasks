@@ -1,65 +1,71 @@
 "use client";
 
-import { useState } from 'react';
-import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { ArrowLeft, Lock } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [isSent, setIsSent] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      toast.success('Reset link "sent"! (Mocked)');
-      setIsSent(true);
-    }
-  };
-
   return (
-    <main style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', backgroundColor: 'var(--bg-cream)' }}>
-      <div className="card" style={{ maxWidth: '450px', width: '100%', padding: '3rem 2rem', textAlign: 'center', borderRadius: '32px' }}>
-        
-        {!isSent ? (
-          <>
-            <div className="floating" style={{ fontSize: '5rem', marginBottom: '1.5rem' }}>☁️✉️</div>
-            <h2 style={{ color: 'var(--dark-brown)', marginBottom: '1rem', fontWeight: 800, fontSize: '2rem' }}>
-              Forgot Password?
-            </h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontWeight: 600 }}>
-              Don't worry! Enter your username or email and we'll send a magic link to get you back in.
-            </p>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <input 
-                type="text" 
-                placeholder="Username or Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', padding: '1.25rem', borderRadius: 'var(--radius-pill)', border: '2px solid transparent', backgroundColor: 'var(--sky-light)', fontWeight: 700, textAlign: 'center', fontSize: '1.1rem' }}
-                required
-              />
-              <button type="submit" className="btn btn-primary" style={{ padding: '1.25rem', fontSize: '1.1rem' }}>
-                Send Magic Link ✨
-              </button>
-            </form>
-          </>
-        ) : (
-          <>
-            <div className="floating" style={{ fontSize: '5rem', marginBottom: '1.5rem' }}>📬💖</div>
-            <h2 style={{ color: 'var(--dark-brown)', marginBottom: '1rem', fontWeight: 800, fontSize: '2rem' }}>
-              Check your inbox!
-            </h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontWeight: 600 }}>
-              We've sent a recovery link to <strong>{email}</strong>. (Note: This is just a demo screen).
-            </p>
-          </>
-        )}
+    <main
+      className="min-h-screen flex items-center justify-center p-6"
+      style={{ background: 'var(--bg-cream)' }}
+    >
+      <div
+        className="rounded-[32px] p-10 md:p-14 border-4 max-w-md w-full text-center relative overflow-hidden"
+        style={{
+          background: 'var(--base-white)',
+          borderColor: 'var(--sky-light)',
+          boxShadow: 'var(--shadow-md)',
+        }}
+      >
+        {/* Deco */}
+        <span className="absolute right-6 top-6 text-4xl opacity-20 pointer-events-none"
+          style={{ animation: 'float 4s ease-in-out infinite' }}>🔒</span>
 
-        <div style={{ marginTop: '2.5rem' }}>
-          <Link href="/login" style={{ color: 'var(--warm-brown)', fontWeight: 700 }}>
-            ← Back to Login
-          </Link>
+        {/* Icon */}
+        <div
+          className="w-24 h-24 rounded-full flex items-center justify-center text-5xl border-4 border-white shadow-lg mx-auto mb-6"
+          style={{ background: 'var(--sky-light)', animation: 'float 3s ease-in-out infinite' }}
+        >
+          🔑
         </div>
+
+        <h1 className="text-3xl font-black mb-3" style={{ color: 'var(--dark-brown)' }}>
+          Forgot Password?
+        </h1>
+
+        <div
+          className="rounded-[20px] p-5 mb-6 border-2 text-left"
+          style={{ background: 'var(--yellow-light)', borderColor: 'var(--soft-yellow)' }}
+        >
+          <div className="flex items-start gap-3">
+            <Lock size={18} strokeWidth={2.5} style={{ color: '#D4AF37', flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p className="font-black text-sm mb-1" style={{ color: 'var(--dark-brown)' }}>
+                Password reset is not available yet
+              </p>
+              <p className="font-bold text-sm" style={{ color: 'var(--warm-brown)' }}>
+                This feature requires additional backend setup (email service). Please contact your family admin to reset your password manually.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="font-bold text-sm mb-8" style={{ color: 'var(--warm-brown)' }}>
+          If you remember your password, you can go back and log in normally.
+        </p>
+
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-[20px] font-black border-4 border-white transition-all hover:-translate-y-0.5"
+          style={{
+            background: 'var(--sky-blue)',
+            color: 'var(--dark-brown)',
+            boxShadow: '0 4px 12px rgba(181,234,234,0.4)',
+          }}
+        >
+          <ArrowLeft size={18} strokeWidth={2.5} />
+          Back to Login
+        </Link>
       </div>
     </main>
   );

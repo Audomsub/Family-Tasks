@@ -16,4 +16,6 @@ public class TaskResponse {
     private LocalDate dueDate;
     private String status;
     private String assigneeName;
+    private String recurrencePattern;
+    private String parentComment;
 }

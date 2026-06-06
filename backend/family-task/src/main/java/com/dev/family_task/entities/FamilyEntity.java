@@ -28,6 +28,9 @@ public class FamilyEntity {
     @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
 
+    @Column(name = "allowance_rate")
+    private Integer allowanceRate = 10; // Default 10 stars = 1 unit
+
     // เชื่อมไปยังสมาชิกในบ้าน
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL)
     @com.fasterxml.jackson.annotation.JsonIgnore
